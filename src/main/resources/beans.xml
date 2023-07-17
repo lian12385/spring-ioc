@@ -1,0 +1,22 @@
+<beans>
+    <bean id="userService"
+          class="com.bulianglin.spring.service.UserServiceImpl">
+        <property name="UserDao" ref="userDao"></property>
+    </bean>
+
+    <bean id="userDao"
+          class="com.bulianglin.spring.dao.UserDaoImpl"
+          init-method="init">
+        <property name="dataSource" ref="dataSource"></property>
+    </bean>
+
+    <bean id="dataSource"
+          class="org.apache.commons.dbcp.BasicDataSource" scope="singleton">
+        <property name="driverClassName" ref="com.mysql.jdbc.Driver"></property>
+        <property name="url" value="jdbc:mysql://127.0.0.1:3306/im_bird?characterEncoding=utf8"></property>
+        <property name="name" value="root"></property>
+        <property name="password" value="root"></property>
+    </bean>
+
+
+</beans>
