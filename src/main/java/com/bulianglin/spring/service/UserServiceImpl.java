@@ -10,7 +10,7 @@ import java.util.Map;
 
 @Data
 public class UserServiceImpl implements UserService{
-    private UserDao userDao = new UserDaoImpl();
+    private UserDaoImpl userDao;
     @Override
     public List<User> queryUsers(Map<String, Object> parm) {
         return userDao.queryUserList(parm);
