@@ -66,7 +66,7 @@ public class TestIoc {
     }
 
     private void registerBeanDefinitions(Element rootElement) {
-        rootElement.get
+        // rootElement.get
     }
 
     private Document getDocument(InputStream inputStream){
