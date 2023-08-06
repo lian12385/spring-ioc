@@ -29,7 +29,7 @@ public class TestIoc {
 
     @Test
     public void test(){
-        //旧代码 , 需要手动设置
+        //旧代码 , 需要手动设置  v1版本的代码
        // UserServiceImpl userService = new UserServiceImpl();
        // UserDaoImpl userDao = new UserDaoImpl();
        // BasicDataSource dataSource = new BasicDataSource();
@@ -40,7 +40,9 @@ public class TestIoc {
        // userDao.setDataSource(dataSource);
        // userService.setUserDao(userDao);
 
-        UserService userService = (UserService) getBean("userService");
+
+       //  v2版本
+       UserService userService = (UserService) getBean("userService");
 
         //使用者
         Map<String,Object> map = new HashMap<>();
@@ -51,6 +53,7 @@ public class TestIoc {
 
     @Before
     public void Before(){
+        System.out.println("初始化方法");
         // 获取资源对象三步骤
         //1 BeanDefinition注册流程
         // 1.1 获取对应资源的流对象
@@ -61,12 +64,96 @@ public class TestIoc {
         // 1.3 按照一定的语义去解析Document文档对象
         registerBeanDefinitions(document.getRootElement());
         // 1.4 最终解析出来的每个bean标签都封装成BeanDefinition对象
-
         // 1.5 将解析出来的BeanDefinition对象，注册到Map集合中
     }
 
     private void registerBeanDefinitions(Element rootElement) {
-        // rootElement.get
+        List<Element> elements = rootElement.elements();
+        for (Element element : elements) {
+            String name = element.getName();
+            if (name.equals("bean")){
+                parseDefaultElement(element);
+            }else {
+                parseCustomElement(element);
+            }
+        }
+    }
+
+    private void parseCustomElement(Element element) {
+    }
+
+    private void parseDefaultElement(Element element) {
+        String id = element.attributeValue("id");
+        String className = element.attributeValue("class");
+        Class clazzType = resolveClassType(className);
+        String scope = element.attributeValue("scope");
+        scope = scope == "" || scope == null ? "singleton" : scope;
+        String initMethod = element.attributeValue("init-method");
+
+        id = id == "" || id == null ? clazzType.getSimpleName() : id;
+
+        BeanDefinition bd = new BeanDefinition(className,id);
+        bd.setScope(scope);
+        bd.setInitMethod(initMethod);
+        bd.setClazzType(clazzType);
+
+        List<Element> elements = element.elements();
+        parsePropertyElements(bd,elements);
+
+        this.beanDefinitionMap.put(id,bd);
+    }
+
+    private Class resolveClassType(String className) {
+        try {
+            return Class.forName(className);
+        } catch (ClassNotFoundException e) {
+//            throw new RuntimeException(e);
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    private void parsePropertyElements(BeanDefinition bd, List<Element> elements) {
+        for (Element element : elements) {
+            parsePropertyElement(bd,element);
+        }
+    }
+
+    private void parsePropertyElement(BeanDefinition bd, Element element) {
+        String name = element.attributeValue("name");
+        String value = element.attributeValue("value");
+        String ref = element.attributeValue("ref");
+
+        if (value != "" && ref != "" && value != null && ref != null){
+            return;
+        }
+
+        if (value != "" && value != null){
+            TypeStringValue typeStringValue = new TypeStringValue(value);
+            Class targetType = resolveTargetType(bd.getClazzType(), name);
+            typeStringValue.setTargetType(targetType);
+            PropertyValue propertyValue = new PropertyValue(name, typeStringValue);
+            bd.addPropertyValue(propertyValue);
+        }
+        else if (ref != "" && ref != null){
+            RuntimeBeanReference runtimeBeanReference = new RuntimeBeanReference(ref);
+            PropertyValue propertyValue = new PropertyValue(name, runtimeBeanReference);
+            bd.addPropertyValue(propertyValue);
+        }
+
+
+    }
+
+    private Class resolveTargetType(Class<?> clazzType, String name) {
+        try {
+            Field field = clazzType.getDeclaredField(name);
+            field.setAccessible(true);
+            return field.getType();
+        } catch (NoSuchFieldException e) {
+//            throw new RuntimeException(e);
+            e.printStackTrace();
+        }
+        return null;
     }
 
     private Document getDocument(InputStream inputStream){
@@ -95,11 +182,11 @@ public class TestIoc {
             return null;
         }
         if ("singleton".equals(bd.getScope())){
-            bean = creatBeanInstance(bd);
+            bean = createBean(bd);
             this.singletonObjects.put(name,bean);
         }
         else if("prototype".equals(bd.getScope())){
-            bean = creatBeanInstance(bd);
+            bean = createBean(bd);
         }
         return bean;
     }
@@ -212,7 +299,7 @@ public class TestIoc {
 
         // 通过反射去创建Bean实例
         Object bean = newObject(constructor,bd);
-        return null;
+        return bean;
     }
 
     private Object newObject(Constructor constructor,BeanDefinition bd) {

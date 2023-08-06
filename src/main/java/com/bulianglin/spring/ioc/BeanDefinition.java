@@ -20,4 +20,12 @@ public class BeanDefinition {
     private static final String SCOPE_SINGLETON = "singleton";
     private static final String SCOPE_PROTOTYPE = "prototype";
 
+    public BeanDefinition(String clazzName, String beanName) {
+        this.clazzName = clazzName;
+        this.beanName = beanName;
+    }
+    public void addPropertyValue(PropertyValue propertyValue){
+        this.propertyValues.add(propertyValue);
+    }
+
 }
